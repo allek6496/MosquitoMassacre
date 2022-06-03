@@ -1,15 +1,15 @@
 // create fluid grid
 Fluid fluid;
 
-String gridType = "DT"; // options are any combination of "V" -- velocity, "D" -- density, "T" -- temperature
+String gridType = "D"; // options are any combination of "V" -- velocity, "D" -- density, "T" -- temperature
 boolean gridLines = false;
 PVector prevMousePos;
 int time;
 
 void setup() {
-    size(800, 800, P3D); // must be square or fluid sim breaks
+    size(1200, 1200, P3D); // must be square or fluid sim breaks
 
-    fluid = new Fluid(200, 5, 0.00000000001, 0.0000001);
+    fluid = new Fluid(300, 5, 0.00000000001, 0.0000001);
 
     prevMousePos = new PVector(-1, -1);
     time = millis();

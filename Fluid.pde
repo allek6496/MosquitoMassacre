@@ -103,7 +103,7 @@ class Fluid {
         // temperature
         for (int x = 1; x <= N; x++) {
             for (int y = 1; y <= N; y++) {
-                velY[x][y] -= dens[x][y] * dens[x][y] * (temp[x][y] - 0.1) * 0.025;
+                velY[x][y] -= pow(dens[x][y], 1.5) * (temp[x][y] - 0.02) * 0.005;
             }
         }
 
@@ -187,7 +187,7 @@ class Fluid {
         boundUpdate(div, 0); // smooths the divergence across the edges
         // boundUpdate(p, 0); // just fills the corners with 0 lol
 
-        for (int k = 0; k < 20; k++) {
+        for (int k = 0; k < 10; k++) {
             for (int x = 1; x <= N; x++) {
                 for (int y = 1; y <= N; y++) {
                     p[x][y] = (div[x][y] + p[x-1][y] + p[x+1][y] +
