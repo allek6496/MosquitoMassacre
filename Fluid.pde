@@ -55,11 +55,11 @@ class Fluid {
             for (int y = 1; y <= N; y++) {
                 if (gridType.indexOf("V") != -1) {
                     stroke(0);
-                    strokeWeight(2);
+                    strokeWeight(1);
 
                     PVector v = new PVector(velX[x][y], velY[x][y]);
 
-                    v.setMag(d/2*min(1, v.mag()*10));
+                    v.setMag(d/1.5*min(1, v.mag()*50));
                     line((x-0.5)*d,       (y-0.5)*d, 
                          (x-0.5)*d + v.x, (y-0.5)*d + v.y);
                 } 
@@ -256,15 +256,15 @@ class Fluid {
     // boundType == 1 is for X vectors, 2 is for Y vectors and 0 is continuous (carried values)
     void boundUpdate(float[][] d, int boundType) {
         for (int i = 1; i <= N; i++) {
-            int mod = 1; 
+            float mod = 1; 
 
             // left-right boundaries
-            if (boundType == 1) mod = -1;
+            if (boundType == 1) mod = -1.2;
             d[0][i] = d[1][i]*mod;
             d[N+1][i] = d[N][i]*mod;
 
             // top-bottom boundaries
-            if (boundType == 2) mod = -1;
+            if (boundType == 2) mod = -1.2;
             else mod = 1;
             d[i][0] = d[i][1]*mod;
             d[i][N+1] = d[i][N]*mod;

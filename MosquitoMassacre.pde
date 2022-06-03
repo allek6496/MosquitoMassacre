@@ -1,25 +1,32 @@
+String gridType = "VT"; // options are any combination of "V" -- velocity, "D" -- density, "T" -- temperature
+boolean gridLines = false;
+float boltSize = 5; // length of bolt segments
+
 // create fluid grid
 Fluid fluid;
+Coil coil;
 
-String gridType = "DT"; // options are any combination of "V" -- velocity, "D" -- density, "T" -- temperature
-boolean gridLines = false;
 PVector prevMousePos;
 int time;
 
 void setup() {
-    size(800, 800, P3D); // must be square or fluid sim breaks
+    size(1200, 1200); // must be square or fluid sim breaks
 
     fluid = new Fluid(200, 5, 0.00000000001, 0.0000001);
+    coil = new Coil(height/3, 100, 1);
 
     prevMousePos = new PVector(-1, -1);
     time = millis();
-    frameRate(60);
+    // frameRate(60);
 }
 
 void draw() {
     background(255);
+
     mouseEffect();
     fluid.update();
+
+    coil.update();
     // update shit
 }
 
@@ -33,7 +40,6 @@ void mouseEffect() {
         for (int i = x-1; i <= x+1; i++) {
             for (int j = y-1; j <= y+1; j++) {
                 if (x < 1 || x > fluid.N || y < 1 || y > fluid.N) continue;
-                println(i, j);
                 fluid.dens[i][j] += 5;
                 if (mousePressed) fluid.temp[i][j] += 0.5;
             }
