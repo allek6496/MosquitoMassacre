@@ -55,11 +55,11 @@ class Fluid {
             for (int y = 1; y <= N; y++) {
                 if (gridType.indexOf("V") != -1) {
                     stroke(0);
-                    strokeWeight(2);
+                    strokeWeight(1);
 
                     PVector v = new PVector(velX[x][y], velY[x][y]);
 
-                    v.setMag(d/2*min(1, v.mag()*10));
+                    v.setMag(d/1.5*min(1, v.mag()*50));
                     line((x-0.5)*d,       (y-0.5)*d, 
                          (x-0.5)*d + v.x, (y-0.5)*d + v.y);
                 } 
@@ -100,10 +100,10 @@ class Fluid {
             velY[int(force.get(0))][int(force.get(1))] += force.get(3);
         }
         
-        // temperature
+        // temperature/gravity
         for (int x = 1; x <= N; x++) {
             for (int y = 1; y <= N; y++) {
-                velY[x][y] -= pow(dens[x][y], 1.5) * (temp[x][y] - 0.02) * 0.005;
+                velY[x][y] -= pow(dens[x][y], 0.25) * (temp[x][y] - 0.015) * 0.005;
             }
         }
 
@@ -132,6 +132,8 @@ class Fluid {
                 velY[x][y] += dt*curl(x, y)*dy;
             }
         }
+
+        project(velX, velY);
     }
 
     void densUpdate() {
@@ -152,7 +154,7 @@ class Fluid {
     void diffuse(float[][] d, float[][] d0, float diffRate, int boundType) {
         float a = dt*diffRate*N*N; // this is one of the few parts I don't get, why *N*N? 
 
-        for (int k = 0; k < 8; k++) {
+        for (int k = 0; k < 20; k++) {
             for (int x = 1; x <= N; x++) {
                 for (int y = 1; y <= N; y++) {
                     d[x][y] = (d0[x][y] + a*(d[x-1][y] + d[x+1][y] + d[x][y-1] + d[x][y+1]))/(1.0+4*a);
@@ -256,7 +258,7 @@ class Fluid {
     // boundType == 1 is for X vectors, 2 is for Y vectors and 0 is continuous (carried values)
     void boundUpdate(float[][] d, int boundType) {
         for (int i = 1; i <= N; i++) {
-            int mod = 1; 
+            float mod = 1; 
 
             // left-right boundaries
             if (boundType == 1) mod = -1;
