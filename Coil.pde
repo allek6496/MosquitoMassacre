@@ -1,7 +1,7 @@
 
 class Coil {
     // coil constants
-    float minCharge = 10; // charge before a bolt can possibly happen
+    float minCharge = 5; // charge before a bolt can possibly happen
 
     float h;
     float radius;
@@ -23,6 +23,7 @@ class Coil {
         // draw the coil
         // start with the body column
         rectMode(CENTER);
+        noStroke();
         fill(75);
         rect(width/2, height - h/2, radius, h); 
 
@@ -31,7 +32,6 @@ class Coil {
         stroke(200, 0, 40);
         strokeWeight(2);
         float theta = tan(1/4.0);
-        println(theta);
         for (int y = int(height-radius*2); y > height - h - radius*2; y -= 6) {
             arc(width/2, y, radius*4, radius*4, PI/2 - theta, PI/2 + theta);
         }
@@ -54,12 +54,19 @@ class Coil {
         charge += power;
         
         // chance to add a bolt
-        if (charge - minCharge > random(0.5)*pow(charge - minCharge, 2)) {
-            float boltTheta = random(TWO_PI-2*theta) + (PI/2 + theta);
+        if (random(1) < log(charge - minCharge + 1)/log(25)) {
+            float boltTheta = random(TWO_PI-4*theta) + (PI/2 + 2*theta);
             if (boltTheta > TWO_PI) boltTheta -= TWO_PI;
-            bolts.add(new Bolt(width/2 + cos(boltTheta)*radius, h - sin(boltTheta)*radius, charge));
+            bolts.add(new Bolt(width/2 + cos(boltTheta)*radius, height - (h - sin(boltTheta)*radius), charge, boltTheta));
 
             charge = 0;
+        }
+
+        // loop through all the bolts and remove them if they're finished
+        for (int i = bolts.size() - 1; i >= 0; i--) {
+            if (!bolts.get(i).update()) {
+                bolts.remove(i);
+            }
         }
     }
 }

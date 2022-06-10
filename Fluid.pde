@@ -11,6 +11,7 @@ class Fluid {
     // [x][y]
     float[][] dens;
     float[][] temp;
+    float[][] ions;
     float[][] velX;
     float[][] velY;
     
@@ -26,6 +27,7 @@ class Fluid {
         // 1-N on-screen, 0 and N+1 off-screen
         this.dens = new float[N+2][N+2];
         this.temp = new float[N+2][N+2];
+        this.ions = new float[N+2][N+2];
         this.velX = new float[N+2][N+2];
         this.velY = new float[N+2][N+2];
         this.forces = new ArrayList<ArrayList<Float>>();
@@ -40,6 +42,7 @@ class Fluid {
         densUpdate();
         
         draw();
+        ions = new float[N+2][N+2];
     }
 
     void draw() {
@@ -53,6 +56,31 @@ class Fluid {
             }
 
             for (int y = 1; y <= N; y++) {
+                // density
+                if (gridType.indexOf("D") != -1) {
+                    rectMode(CENTER);
+                    noStroke();
+                    fill(100, 100, 100, min(dens[x][y], 1.5)*180);
+                    rect((x-0.5)*d, (y-0.5)*d, d, d);
+                }
+
+                // heat
+                if (gridType.indexOf("T") != -1) {
+                    rectMode(CENTER);
+                    noStroke();
+                    fill(255, 0, 0, min(sqrt(temp[x][y]), 1)*255);;
+                    rect((x-0.5)*d, (y-0.5)*d, d, d); 
+                }
+
+                // ionization level
+                if (gridType.indexOf("I") != -1) {
+                    rectMode(CENTER);
+                    noStroke();
+                    fill(180, 150, 255, min(sqrt(ions[x][y]) * pow(dens[x][y], 0.5), 1)*255);
+                    rect((x-0.5)*d, (y-0.5)*d, d, d); 
+                }
+
+                // velocity lines
                 if (gridType.indexOf("V") != -1) {
                     stroke(0);
                     strokeWeight(1);
@@ -63,21 +91,6 @@ class Fluid {
                     line((x-0.5)*d,       (y-0.5)*d, 
                          (x-0.5)*d + v.x, (y-0.5)*d + v.y);
                 } 
-
-                if (gridType.indexOf("D") != -1) {
-                    rectMode(CENTER);
-                    
-                    noStroke();
-                    fill(0, 0, 0, min(dens[x][y], 1.5)*180);
-                    rect((x-0.5)*d, (y-0.5)*d, d, d);
-                }
-
-                if (gridType.indexOf("T") != -1) {
-                    rectMode(CENTER);
-                    noStroke();
-                    fill(255, 0, 0, min(sqrt(temp[x][y]), 1)*255);;
-                    rect((x-0.5)*d, (y-0.5)*d, d, d); 
-                }
 
                 // horizontal lines
                 if (gridLines && x == 1) {
@@ -103,7 +116,9 @@ class Fluid {
         // temperature/gravity
         for (int x = 1; x <= N; x++) {
             for (int y = 1; y <= N; y++) {
-                velY[x][y] -= pow(dens[x][y], 0.25) * (temp[x][y] - 0.015) * 0.005;
+                velY[x][y] -= pow(dens[x][y], 0.25) * (temp[x][y] - 0.01) * 0.0005;
+                temp[x][y] /= 1.05; // gradually remove temperature (somewhat cheaty, but should make it look better)
+                dens[x][y] /= 1.005;
             }
         }
 

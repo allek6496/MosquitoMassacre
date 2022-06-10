@@ -1,4 +1,4 @@
-String gridType = "DT"; // options are any combination of "V" -- velocity, "D" -- density, "T" -- temperature
+String gridType = "ID"; // options are any combination of "I" -- ionization, "V" -- velocity, "D" -- density, "T" -- temperature
 boolean gridLines = false;
 float boltSize = 5; // length of bolt segments
 
@@ -17,17 +17,17 @@ void setup() {
 
     prevMousePos = new PVector(-1, -1);
     time = millis();
-    // frameRate(60);
+
+    // frameRate(5);
 }
 
 void draw() {
-    background(255);
+    background(50);
 
     mouseEffect();
-    fluid.update();
-
     coil.update();
-    // update shit
+
+    fluid.update();
 }
 
 void mouseEffect() {
@@ -68,7 +68,7 @@ void mouseEffect() {
 }
 
 int screenGrid(float p) {
-    return int(1+float(ceil(fluid.N*p/width)));
+    return int(float(ceil(fluid.N*p/width)));
 }
 
 int mouseGridX() {
