@@ -1,10 +1,19 @@
-String gridType = "ID"; // options are any combination of "I" -- ionization, "V" -- velocity, "D" -- density, "T" -- temperature
+// TODO: fluid.N global variable
+
+// Options are:
+// "I" -- bolt ionization
+// "V" -- velocity arrows
+// "D" -- smoke density
+// "T" -- smoke temperature
+// "M" -- mosquito glow
+String gridType = "DM";
 boolean gridLines = false;
 float boltSize = 5; // length of bolt segments
 
 // create fluid grid
 Fluid fluid;
 Coil coil;
+ArrayList<Mosquito> mosquitos = new ArrayList<Mosquito>();
 
 PVector prevMousePos;
 int time;
@@ -13,7 +22,7 @@ void setup() {
     size(1200, 1200); // must be square or fluid sim breaks
 
     fluid = new Fluid(200, 5, 0.00000000001, 0.0000001);
-    coil = new Coil(height/3, 100, 1);
+    coil = new Coil(height/3, 100, 3);
 
     prevMousePos = new PVector(-1, -1);
     time = millis();
@@ -26,6 +35,10 @@ void draw() {
 
     mouseEffect();
     coil.update();
+
+    for (Mosquito m : mosquitos) {
+        m.update();
+    }
 
     fluid.update();
 }
@@ -48,16 +61,17 @@ void mouseEffect() {
         while (prevMousePos.dist(newMousePos) > 0.5) {
             x = screenGrid(prevMousePos.x);
             y = screenGrid(prevMousePos.y);
+            if (1 <= x && x <= fluid.N && 1 <= y && y <= fluid.N) {
+                PVector force = PVector.sub(newMousePos, prevMousePos).mult(0.002);
 
-            PVector force = PVector.sub(newMousePos, prevMousePos).mult(0.001);
+                ArrayList<Float> newForce = new ArrayList<Float>();
+                newForce.add(float(x));
+                newForce.add(float(y));
+                newForce.add(force.x);
+                newForce.add(force.y);
 
-            ArrayList<Float> newForce = new ArrayList<Float>();
-            newForce.add(float(x));
-            newForce.add(float(y));
-            newForce.add(force.x);
-            newForce.add(force.y);
-
-            fluid.forces.add(newForce);
+                fluid.forces.add(newForce);
+            }
 
             prevMousePos.add(PVector.sub(newMousePos, prevMousePos).mult(0.2));
         }
@@ -67,8 +81,12 @@ void mouseEffect() {
     prevMousePos = new PVector(mouseX, mouseY);
 }
 
+void mousePressed() {
+    mosquitos.add(new Mosquito(mouseX, mouseY));
+}
+
 int screenGrid(float p) {
-    return int(float(ceil(fluid.N*p/width)));
+    return min(fluid.N + 1, max(1, int(float(ceil(fluid.N*p/width)))));
 }
 
 int mouseGridX() {

@@ -4,13 +4,13 @@ import java.util.Set;
 class Bolt {
     // global bolt settings
     float len = boltSize;
-    int speed = 10; // how many bolts to spawn per frame, until charge is depleted
+    int speed = 20; // how many bolts to spawn per frame, until charge is depleted
     float dissipation = 0.06; // how much charge is naturally lost per bolt segment
     float smokeAmount = 0.5;
-    float heat = 0.2;
+    float heat = 0.3;
 
-    // TODO: turn head() into a variable, being calculated way too often lol
     PVector pos;
+    PVector head;
     float charge; // charge held in this bolt plus all of its children
     int depth; // if it's the head bolt, this is the number of updates that have happened
 
@@ -21,6 +21,8 @@ class Bolt {
     // main constructor
     Bolt(float headX, float headY, float charge, float angle) {
         this.pos = new PVector(headX, headY);
+        this.head = PVector.add(pos, PVector.fromAngle(angle).setMag(len));
+
         this.charge = charge;
 
         this.depth = 0;
@@ -44,14 +46,14 @@ class Bolt {
         stroke(225, 225, 255);
         strokeWeight(ceil(sqrt(4*charge)));
 
-        line(pos.x, pos.y, head().x, head().y);
+        line(pos.x, pos.y, head.x, head.y);
 
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 12; i++) {
             for (int x = -i; x <= i; x++) {
                 for (int y = -i; y <= i; y++) {
-                    int iX = max(1, min(screenGrid(head().x) + x, fluid.N+1));
-                    int iY = max(1, min(screenGrid(head().y) + y, fluid.N+1));
-                    fluid.ions[iX][iY] += pow(charge/(4*coil.minCharge), (2*i+1));
+                    int iX = max(1, min(screenGrid(head.x) + x, fluid.N+1));
+                    int iY = max(1, min(screenGrid(head.y) + y, fluid.N+1));
+                    fluid.ions[iX][iY] += charge/(4*coil.minCharge)/(3*pow(i, 3)+1);
                 }
             }
         }
@@ -111,8 +113,8 @@ class Bolt {
 
     // adds a child to this branch. super annoying to have to pass targetDepth all the way through, but idk how else to do it
     void addChild(float amount, int targetDepth) {
-        if (head().x < 0 || width < head().x ||
-            head().y < 0 || height < head().y) return;
+        if (head.x < 0 || width < head.x ||
+            head.y < 0 || height < head.y) return;
 
         float newCharge;
         newCharge = charge*amount - dissipation;
@@ -126,8 +128,8 @@ class Bolt {
 
         if (depth < targetDepth - speed) newDepth = targetDepth - speed; 
 
-        // yes head() is being called twice, I don't care to fix that
-        Bolt newBolt = new Bolt(head().x, head().y, newCharge, dir, this, newDepth);
+        // yes head is being called twice, I don't care to fix that
+        Bolt newBolt = new Bolt(head.x, head.y, newCharge, dir, this, newDepth);
 
         // whether or not a new bolt was successfully made
         boolean used = false;
@@ -144,21 +146,21 @@ class Bolt {
         // TODO: do the math for intersection of line with grid, bit of sleep and you can do it, will be similar math applied to glow
         /*if (used) {
             // find the equation of the line from start to head (I don't account for vertical lines, oh well)
-            float m = (head().y - pos.y) / (head().x - pos.x); // I could've just used angle but this is more intuitive
+            float m = (head.y - pos.y) / (head.x - pos.x); // I could've just used angle but this is more intuitive
 
             float b = pos.y - m*pos.x;
 
             // for each grid from start to end, include every square between the squares the line enters and exits this column
-            int dX = int((head().x - pos.x) / abs(head().x - pos.x));
-            int dY = int((head().y - pos.y) / abs(head().y - pos.y));
+            int dX = int((head.x - pos.x) / abs(head.x - pos.x));
+            int dY = int((head.y - pos.y) / abs(head.y - pos.y));
 
-            for (int x = screenGrid(pos.x); dX*(screenGrid(head().x) - x) >= 0; x += dX) {
+            for (int x = screenGrid(pos.x); dX*(screenGrid(head.x) - x) >= 0; x += dX) {
                 int xLeft = int((x-1) * width / fluid.N);
                 
                 for (int y = screenGrid(m*xLeft + b); dY*(screenGrid(m*(xLeft + 1) + b) - y) >= 0; y += dY) {
                     // don't let it overshoot the actual bounds of the bolt
-                    if (dY > 0 && (y < screenGrid(pos.y) || y > screenGrid(head().y))) continue;
-                    if (dY < 0 && (y > screenGrid(pos.y) || y < screenGrid(head().y))) continue;
+                    if (dY > 0 && (y < screenGrid(pos.y) || y > screenGrid(head.y))) continue;
+                    if (dY < 0 && (y > screenGrid(pos.y) || y < screenGrid(head.y))) continue;
 
                     // don't count the root square, because that's double counted by the parent
                     if (x == screenGrid(pos.x) && y == screenGrid(pos.y)) continue;
@@ -172,8 +174,8 @@ class Bolt {
 
         // or just use head (this is better in mose cases lol)
         if (used) {
-            fluid.dens[screenGrid(head().x)][screenGrid(head().y)] += smokeAmount*charge;
-            fluid.temp[screenGrid(head().x)][screenGrid(head().y)] += heat*charge;
+            fluid.dens[screenGrid(head.x)][screenGrid(head.y)] += smokeAmount*charge;
+            fluid.temp[screenGrid(head.x)][screenGrid(head.y)] += heat*charge;
         }
     }
 
@@ -204,8 +206,8 @@ class Bolt {
         }
 
         // repel strongly from the head of the coil
-        PVector fromCoil = PVector.sub(head(), new PVector(width/2, height - coil.h));
-        fromCoil.setMag(15*this.charge / pow((fromCoil.mag() - coil.radius), 2));
+        PVector fromCoil = PVector.sub(head, new PVector(width/2, height - coil.h));
+        fromCoil.setMag(50*this.charge / pow((fromCoil.mag() - coil.radius), 2));
         force.add(fromCoil);
 
         // Smoke attract (small effect, attempts to keep it within the smoke if possible)
@@ -262,15 +264,10 @@ class Bolt {
         return force;
     }
 
-    // the end of the bolt
-    PVector head() {
-        return PVector.add(pos, new PVector(len*cos(angle), len*sin(angle)));
-    }
-
     // gets the force from another bolt onto this one
     PVector getForce(Bolt bolt) {
-        PVector force = PVector.sub(this.head(), bolt.head());
-        force.setMag(this.charge * bolt.charge / pow(force.mag(), 2)); // Change the /10 to adjust strength
+        PVector force = PVector.sub(this.head, bolt.head);
+        force.setMag(2*this.charge * bolt.charge / pow(force.mag(), 2)); // Change the /10 to adjust strength
         if (Float.isNaN(force.mag())) force = new PVector(0, 0);
         return force;
     }

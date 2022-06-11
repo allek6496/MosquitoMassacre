@@ -3,15 +3,17 @@
 
 // TODO: remove swapping altogether 
 class Fluid {
-    int N; // number of cells across the screen (must be square)
-    float dt; // dt seems to be speed of processing
+    int N; // number of cells across the screen (must be square, could be a global variable but oh well)
+    float dt; 
     float viscosity;
     float diffusion;
 
+    // so many grids wtf space complexity where?
     // [x][y]
     float[][] dens;
     float[][] temp;
     float[][] ions;
+    float[][] glow;
     float[][] velX;
     float[][] velY;
     
@@ -26,8 +28,9 @@ class Fluid {
 
         // 1-N on-screen, 0 and N+1 off-screen
         this.dens = new float[N+2][N+2];
-        this.temp = new float[N+2][N+2];
-        this.ions = new float[N+2][N+2];
+        this.temp = new float[N+2][N+2]; 
+        this.ions = new float[N+2][N+2]; // lightning ionization 
+        this.glow = new float[N+2][N+2]; // mosquito glow
         this.velX = new float[N+2][N+2];
         this.velY = new float[N+2][N+2];
         this.forces = new ArrayList<ArrayList<Float>>();
@@ -43,6 +46,7 @@ class Fluid {
         
         draw();
         ions = new float[N+2][N+2];
+        glow = new float[N+2][N+2];
     }
 
     void draw() {
@@ -56,27 +60,30 @@ class Fluid {
             }
 
             for (int y = 1; y <= N; y++) {
+                rectMode(CENTER);
+                noStroke();
+
                 // density
                 if (gridType.indexOf("D") != -1) {
-                    rectMode(CENTER);
-                    noStroke();
                     fill(100, 100, 100, min(dens[x][y], 1.5)*180);
                     rect((x-0.5)*d, (y-0.5)*d, d, d);
                 }
 
                 // heat
                 if (gridType.indexOf("T") != -1) {
-                    rectMode(CENTER);
-                    noStroke();
                     fill(255, 0, 0, min(sqrt(temp[x][y]), 1)*255);;
+                    rect((x-0.5)*d, (y-0.5)*d, d, d); 
+                }
+
+                // glow from mosquitos
+                if (gridType.indexOf("M") != -1) {
+                    fill(80, 255, 100, min(sqrt(glow[x][y]) * pow(dens[x][y] + 0.1, 0.25), 1)*255);
                     rect((x-0.5)*d, (y-0.5)*d, d, d); 
                 }
 
                 // ionization level
                 if (gridType.indexOf("I") != -1) {
-                    rectMode(CENTER);
-                    noStroke();
-                    fill(180, 150, 255, min(sqrt(ions[x][y]) * pow(dens[x][y], 0.5), 1)*255);
+                    fill(180, 150, 255, min(sqrt(ions[x][y]) * pow(dens[x][y], 1), 1)*255);
                     rect((x-0.5)*d, (y-0.5)*d, d, d); 
                 }
 
@@ -109,8 +116,12 @@ class Fluid {
 
         // add forces
         for (ArrayList<Float> force : forces) {
-            velX[int(force.get(0))][int(force.get(1))] += force.get(2);
-            velY[int(force.get(0))][int(force.get(1))] += force.get(3);
+            if (0 <= force.get(0) && force.get(0) <= N+1 &&
+                0 <= force.get(1) && force.get(1) <= N+1) {
+
+                velX[int(force.get(0))][int(force.get(1))] += force.get(2);
+                velY[int(force.get(0))][int(force.get(1))] += force.get(3);
+            }
         }
         
         // temperature/gravity
