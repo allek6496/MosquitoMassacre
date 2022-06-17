@@ -48,12 +48,17 @@ class Bolt {
 
         line(pos.x, pos.y, head.x, head.y);
 
-        for (int i = 0; i < 12; i++) {
-            for (int x = -i; x <= i; x++) {
-                for (int y = -i; y <= i; y++) {
-                    int iX = max(1, min(screenGrid(head.x) + x, fluid.N+1));
-                    int iY = max(1, min(screenGrid(head.y) + y, fluid.N+1));
-                    fluid.ions[iX][iY] += charge/(4*coil.minCharge)/(3*pow(i, 3)+1);
+        if (gridType.indexOf("I") != -1) {
+            int gX = screenGrid(head.x);
+            int gY = screenGrid(head.y);
+
+            for (int i = 0; i < 12; i++) {
+                for (int x = -i; x <= i; x++) {
+                    for (int y = -i; y <= i; y++) {
+                        int iX = max(1, min(gX + x, fluid.N+1));
+                        int iY = max(1, min(gY + y, fluid.N+1));
+                        fluid.ions[iX][iY] += charge/(4*coil.minCharge)/(3*pow(i, 3)+1);
+                    }
                 }
             }
         }
@@ -143,36 +148,9 @@ class Bolt {
         }
 
         
-        // TODO: do the math for intersection of line with grid, bit of sleep and you can do it, will be similar math applied to glow
-        /*if (used) {
-            // find the equation of the line from start to head (I don't account for vertical lines, oh well)
-            float m = (head.y - pos.y) / (head.x - pos.x); // I could've just used angle but this is more intuitive
+        // (removed) do the math for intersection of line with grid
 
-            float b = pos.y - m*pos.x;
-
-            // for each grid from start to end, include every square between the squares the line enters and exits this column
-            int dX = int((head.x - pos.x) / abs(head.x - pos.x));
-            int dY = int((head.y - pos.y) / abs(head.y - pos.y));
-
-            for (int x = screenGrid(pos.x); dX*(screenGrid(head.x) - x) >= 0; x += dX) {
-                int xLeft = int((x-1) * width / fluid.N);
-                
-                for (int y = screenGrid(m*xLeft + b); dY*(screenGrid(m*(xLeft + 1) + b) - y) >= 0; y += dY) {
-                    // don't let it overshoot the actual bounds of the bolt
-                    if (dY > 0 && (y < screenGrid(pos.y) || y > screenGrid(head.y))) continue;
-                    if (dY < 0 && (y > screenGrid(pos.y) || y < screenGrid(head.y))) continue;
-
-                    // don't count the root square, because that's double counted by the parent
-                    if (x == screenGrid(pos.x) && y == screenGrid(pos.y)) continue;
-
-                    // finally, add the smoke to this square
-                    fluid.dens[x-1][y-1] += smokeAmount*charge;
-                    fluid.temp[x-1][y-1] += heat*charge;
-                }
-            }
-        }*/
-
-        // or just use head (this is better in mose cases lol)
+        // or just create smoke at the head (this is better in mose cases lol)
         if (used) {
             fluid.dens[screenGrid(head.x)][screenGrid(head.y)] += smokeAmount*charge;
             fluid.temp[screenGrid(head.x)][screenGrid(head.y)] += heat*charge;
@@ -210,7 +188,10 @@ class Bolt {
         fromCoil.setMag(50*this.charge / pow((fromCoil.mag() - coil.radius), 2));
         force.add(fromCoil);
 
-        // Smoke attract (small effect, attempts to keep it within the smoke if possible)
+        // attract slightly towards mosquitos
+        force.add(targetAttract());
+
+        // smoke attract (small effect, attempts to keep it within the smoke if possible)
         // sample smoke levels ahead, left and right, and turn appropriately 
         float turnAmount = PI/6;
         force.setMag(len);
@@ -249,6 +230,21 @@ class Bolt {
 
         force.rotate(random(-PI/15, PI/15));
         return force.heading(); // magnitude of this isn't used
+    }
+
+    // pulls the bolt towards mosquitos
+    PVector targetAttract() {
+        PVector force = new PVector(0, 0);
+
+        for (Mosquito mosquito : mosquitos) {
+            if (mosquito.alive) {
+                PVector newForce = PVector.sub(mosquito.pos, this.head);
+                newForce.setMag(10*this.charge / pow(newForce.mag(), 2));
+
+                force.add(newForce);
+            }
+        }
+        return force;
     }
 
     // recursive function to get the net repulsion from this whole bolt (excluding up to one possible child)

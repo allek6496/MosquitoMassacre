@@ -14,6 +14,7 @@ class Fluid {
     float[][] temp;
     float[][] ions;
     float[][] glow;
+    float[][] fire;
     float[][] velX;
     float[][] velY;
     
@@ -31,6 +32,7 @@ class Fluid {
         this.temp = new float[N+2][N+2]; 
         this.ions = new float[N+2][N+2]; // lightning ionization 
         this.glow = new float[N+2][N+2]; // mosquito glow
+        this.fire = new float[N+2][N+2];
         this.velX = new float[N+2][N+2];
         this.velY = new float[N+2][N+2];
         this.forces = new ArrayList<ArrayList<Float>>();
@@ -63,6 +65,8 @@ class Fluid {
                 rectMode(CENTER);
                 noStroke();
 
+                // it would be easier to just add the colors, but that math is a little 
+
                 // density
                 if (gridType.indexOf("D") != -1) {
                     fill(100, 100, 100, min(dens[x][y], 1.5)*180);
@@ -81,6 +85,12 @@ class Fluid {
                     rect((x-0.5)*d, (y-0.5)*d, d, d); 
                 }
 
+                // fire glow
+                if (gridType.indexOf("F") != -1) {
+                    fill(252, 206, 108, min(sqrt(fire[x][y]) * pow(dens[x][y], 0.5), 1)*255);
+                    rect((x-0.5)*d, (y-0.5)*d, d, d);
+                }
+
                 // ionization level
                 if (gridType.indexOf("I") != -1) {
                     fill(180, 150, 255, min(sqrt(ions[x][y]) * pow(dens[x][y], 1), 1)*255);
@@ -94,7 +104,7 @@ class Fluid {
 
                     PVector v = new PVector(velX[x][y], velY[x][y]);
 
-                    v.setMag(d/1.5*min(1, v.mag()*50));
+                    v.setMag(2*d*min(1, v.mag()*50));
                     line((x-0.5)*d,       (y-0.5)*d, 
                          (x-0.5)*d + v.x, (y-0.5)*d + v.y);
                 } 
@@ -124,12 +134,13 @@ class Fluid {
             }
         }
         
-        // temperature/gravity
+        // temperature/gravity (density/temp reduction should probably be elsewhere but this is convienent)
         for (int x = 1; x <= N; x++) {
             for (int y = 1; y <= N; y++) {
                 velY[x][y] -= pow(dens[x][y], 0.25) * (temp[x][y] - 0.01) * 0.0005;
                 temp[x][y] /= 1.05; // gradually remove temperature (somewhat cheaty, but should make it look better)
                 dens[x][y] /= 1.005;
+                fire[x][y] /= 1.25;
             }
         }
 
@@ -165,14 +176,17 @@ class Fluid {
     void densUpdate() {
         float[][] densNew = new float[N+2][N+2];
         float[][] tempNew = new float[N+2][N+2];
+        float[][] fireNew = new float[N+2][N+2];
 
         // add sources or whatever
         diffuse(densNew, dens, diffusion, 0);
         diffuse(tempNew, temp, diffusion, 0);
+        diffuse(fireNew, fire, diffusion, 0);
         // swap(dens, densNew);
 
         advect(dens, densNew, 0);
         advect(temp, tempNew, 0);
+        advect(fire, fireNew, 0);
         // swap(dens, densNew);
     }
 
@@ -213,7 +227,7 @@ class Fluid {
         }
 
         boundUpdate(div, 0); // smooths the divergence across the edges
-        // boundUpdate(p, 0); // just fills the corners with 0 lol
+        boundUpdate(p, 0); // just fills the corners with 0 lol
 
         for (int k = 0; k < 10; k++) {
             for (int x = 1; x <= N; x++) {
@@ -261,13 +275,7 @@ class Fluid {
                     fill(0, 0);
                     rectMode(CENTER);
 
-                    // println(sX, x0, sY, y0);
-                    // println(dx0, dx1, dy0, dy1);
-                    // println();
-                    // println(velX[x][y], velY[x][y]);
-
                     float dS = float(width)/N;
-                    // rect(dS*x, dS*y, 2*dS, 2*dS);
 
                     circle(sX*dS, sY*dS, dS);
                 }
